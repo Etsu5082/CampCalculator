@@ -644,7 +644,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <h6>開発・管理者</h6>
-                    <p class="mb-1"><strong>Laissez-Faire T.C. 11th 渡邉光悦</strong></p>
+                    <p class="mb-1"><strong>Laissez-Faire T.C. 11th 幹事長 渡邉光悦</strong></p>
                     <ul class="list-unstyled text-muted">
                         <li><i class="bi bi-envelope"></i> <a href="mailto:kohetsu.watanabe@gmail.com">kohetsu.watanabe@gmail.com</a></li>
                         <li><i class="bi bi-envelope"></i> <a href="mailto:kohetsu.watanabe@etsu-dx.com">kohetsu.watanabe@etsu-dx.com</a></li>

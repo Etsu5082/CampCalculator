@@ -190,7 +190,7 @@
                 <div class="col-md-6">
                     <p class="mb-1"><strong>開発・管理者</strong></p>
                     <p class="text-muted small mb-0">
-                        Laissez-Faire T.C. 11th 渡邉光悦<br>
+                        Laissez-Faire T.C. 11th 幹事長 渡邉光悦<br>
                         <a href="mailto:kohetsu.watanabe@gmail.com">kohetsu.watanabe@gmail.com</a><br>
                         <a href="mailto:kohetsu.watanabe@etsu-dx.com">kohetsu.watanabe@etsu-dx.com</a><br>
                         TEL: 080-2671-9571<br>
