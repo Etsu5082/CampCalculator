@@ -657,7 +657,7 @@
                     <h6>ソースコード</h6>
                     <p class="text-muted">
                         このアプリはオープンソースで公開されています。<br>
-                        バグ報告や機能リクエストはGitHubからお願いします。
+                        バグ報告や機能リクエストはGitHub、メールの両方からお願いします。
                     </p>
                     <p>
                         <a href="https://github.com/Etsu5082/CampCalculator" target="_blank" class="btn btn-outline-dark btn-sm">
