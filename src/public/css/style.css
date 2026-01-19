@@ -1,0 +1,128 @@
+/* 合宿費用計算アプリ スタイルシート */
+
+/* ベース */
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* カード */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+}
+
+/* テーブル */
+.table th {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* フォーム */
+.form-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+}
+
+/* バッジ */
+.badge {
+    font-weight: 500;
+}
+
+/* ボタン */
+.btn-sm {
+    font-size: 0.8rem;
+}
+
+/* タブ */
+.nav-tabs .nav-link {
+    color: #495057;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+}
+
+/* トースト */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1100;
+}
+
+.toast {
+    background-color: #198754;
+    color: white;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+
+    .table {
+        font-size: 0.9rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* モーダル */
+.modal-header {
+    background-color: #f8f9fa;
+}
+
+/* 金額表示 */
+.text-money {
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+/* ロード中 */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* 印刷用 */
+@media print {
+    .navbar,
+    .btn,
+    .no-print {
+        display: none !important;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+}

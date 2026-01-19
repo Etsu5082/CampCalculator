@@ -1,0 +1,26 @@
+# 環境設定ファイル
+src/config/database.php
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ログファイル
+*.log
+
+# 一時ファイル
+*.tmp
+*.temp
+
+# Composer（使用する場合）
+vendor/
+
+# Node（使用する場合）
+node_modules/
