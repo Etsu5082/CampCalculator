@@ -85,6 +85,10 @@ $router->get('/api/camps/{id}/partial-schedule', 'CalculationController@partialS
 $router->get('/api/camps/{id}/export/pdf', 'ExportController@pdf');
 $router->get('/api/camps/{id}/export/excel', 'ExportController@excel');
 
+// チャットボットルート
+$router->get('/api/chatbot/status', 'ChatbotController@status');
+$router->post('/api/chatbot/ask', 'ChatbotController@ask');
+
 // ページルート（HTML表示）
 $router->get('/', 'PageController@index');
 $router->get('/login', 'PageController@login');

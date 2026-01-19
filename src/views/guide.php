@@ -674,3 +674,212 @@
         <a href="/index.php?route=camps" class="btn btn-primary">合宿一覧に戻る</a>
     </div>
 </div>
+
+<!-- AIチャットボット（フローティング） -->
+<div id="chatbot-container">
+    <!-- チャットボタン -->
+    <button id="chatbot-toggle" class="btn btn-primary rounded-circle shadow" style="width: 60px; height: 60px; position: fixed; bottom: 20px; right: 20px; z-index: 1050;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+            <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
+        </svg>
+    </button>
+
+    <!-- チャットウィンドウ -->
+    <div id="chatbot-window" class="card shadow-lg" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 380px; max-height: 500px; z-index: 1050;">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <span><strong>AIアシスタント</strong></span>
+            <button type="button" class="btn-close btn-close-white" id="chatbot-close"></button>
+        </div>
+        <div class="card-body p-0" style="height: 350px; overflow-y: auto;" id="chatbot-messages">
+            <div class="p-3">
+                <div class="alert alert-info mb-0" id="chatbot-welcome">
+                    <small>
+                        <strong>こんにちは！</strong><br>
+                        合宿費用計算アプリについて質問があれば、お気軽にどうぞ。<br>
+                        例：「食事の計算方法は？」「CSV登録の形式は？」
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer p-2">
+            <div id="chatbot-disabled-notice" class="text-muted small text-center py-2" style="display: none;">
+                AI機能は現在無効です
+            </div>
+            <form id="chatbot-form" class="d-flex gap-2">
+                <input type="text" class="form-control form-control-sm" id="chatbot-input" placeholder="質問を入力..." maxlength="500">
+                <button type="submit" class="btn btn-primary btn-sm" id="chatbot-submit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+#chatbot-messages .message {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    max-width: 85%;
+    word-wrap: break-word;
+}
+#chatbot-messages .message.user {
+    background-color: #0d6efd;
+    color: white;
+    margin-left: auto;
+}
+#chatbot-messages .message.assistant {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+#chatbot-messages .message.error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+#chatbot-messages .typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 12px;
+}
+#chatbot-messages .typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background-color: #6c757d;
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out;
+}
+#chatbot-messages .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+#chatbot-messages .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.getElementById('chatbot-toggle');
+    const window_ = document.getElementById('chatbot-window');
+    const close = document.getElementById('chatbot-close');
+    const form = document.getElementById('chatbot-form');
+    const input = document.getElementById('chatbot-input');
+    const messages = document.getElementById('chatbot-messages');
+    const disabledNotice = document.getElementById('chatbot-disabled-notice');
+    const submitBtn = document.getElementById('chatbot-submit');
+
+    let isEnabled = false;
+
+    // チャットボットの状態を確認
+    async function checkStatus() {
+        try {
+            const res = await fetch('/index.php?route=api/chatbot/status');
+            const data = await res.json();
+            isEnabled = data.success && data.data.enabled;
+
+            if (!isEnabled) {
+                disabledNotice.style.display = 'block';
+                form.style.display = 'none';
+            }
+        } catch (e) {
+            console.error('Chatbot status check failed:', e);
+        }
+    }
+
+    // トグル
+    toggle.addEventListener('click', function() {
+        const isVisible = window_.style.display !== 'none';
+        window_.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) {
+            input.focus();
+            checkStatus();
+        }
+    });
+
+    // 閉じる
+    close.addEventListener('click', function() {
+        window_.style.display = 'none';
+    });
+
+    // メッセージ追加
+    function addMessage(text, type) {
+        const welcome = document.getElementById('chatbot-welcome');
+        if (welcome) welcome.remove();
+
+        const div = document.createElement('div');
+        div.className = 'message ' + type;
+        div.innerHTML = text.replace(/\n/g, '<br>');
+
+        const container = document.createElement('div');
+        container.className = 'p-3 pt-0';
+        container.appendChild(div);
+
+        messages.appendChild(container);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    // ローディング表示
+    function showTyping() {
+        const div = document.createElement('div');
+        div.className = 'typing-indicator';
+        div.id = 'typing-indicator';
+        div.innerHTML = '<span></span><span></span><span></span>';
+
+        const container = document.createElement('div');
+        container.className = 'p-3 pt-0';
+        container.appendChild(div);
+
+        messages.appendChild(container);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function hideTyping() {
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) indicator.parentElement.remove();
+    }
+
+    // 送信
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const question = input.value.trim();
+        if (!question || !isEnabled) return;
+
+        addMessage(question, 'user');
+        input.value = '';
+        input.disabled = true;
+        submitBtn.disabled = true;
+        showTyping();
+
+        try {
+            const res = await fetch('/index.php?route=api/chatbot/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question })
+            });
+
+            const data = await res.json();
+            hideTyping();
+
+            if (data.success) {
+                addMessage(data.data.answer, 'assistant');
+            } else {
+                addMessage(data.error || 'エラーが発生しました', 'error');
+            }
+        } catch (e) {
+            hideTyping();
+            addMessage('通信エラーが発生しました', 'error');
+        }
+
+        input.disabled = false;
+        submitBtn.disabled = false;
+        input.focus();
+    });
+
+    // 初期状態チェック
+    checkStatus();
+});
+</script>
