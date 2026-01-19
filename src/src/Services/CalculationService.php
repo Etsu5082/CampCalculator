@@ -70,6 +70,12 @@ class CalculationService
         $breakdown = [
             'participant_id' => $participant['id'],
             'name' => $participant['name'],
+            'grade' => $participant['grade'] ?? null,
+            'gender' => $participant['gender'] ?? null,
+            'join_day' => $participant['join_day'],
+            'join_timing' => $participant['join_timing'],
+            'leave_day' => $participant['leave_day'],
+            'leave_timing' => $participant['leave_timing'],
             'items' => [],
             'total' => 0,
         ];
