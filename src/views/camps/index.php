@@ -182,6 +182,30 @@
                     詳細な使い方ガイドを見る →
                 </a>
             </div>
+
+            <hr class="my-4">
+
+            <h6>お問い合わせ・トラブル発生時</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>開発・管理者</strong></p>
+                    <p class="text-muted small mb-0">
+                        Laissez-Faire T.C. 11th 渡邉光悦<br>
+                        <a href="mailto:kohetsu.watanabe@gmail.com">kohetsu.watanabe@gmail.com</a><br>
+                        <a href="mailto:kohetsu.watanabe@etsu-dx.com">kohetsu.watanabe@etsu-dx.com</a><br>
+                        TEL: 080-2671-9571<br>
+                        〒103-0014 東京都中央区日本橋蛎殻町1-22-1 デュークスカーラ日本橋1205号
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>ソースコード</strong></p>
+                    <p class="text-muted small mb-0">
+                        <a href="https://github.com/Etsu5082/CampCalculator" target="_blank">
+                            https://github.com/Etsu5082/CampCalculator
+                        </a>
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

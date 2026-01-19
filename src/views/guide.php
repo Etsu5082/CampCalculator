@@ -29,6 +29,7 @@
                         <li><a href="#calculation">計算結果の確認</a></li>
                         <li><a href="#export">PDF/Excel出力</a></li>
                         <li><a href="#faq">よくある質問</a></li>
+                        <li><a href="#contact">お問い合わせ</a></li>
                     </ol>
                 </div>
             </div>
@@ -634,9 +635,42 @@
         </div>
     </div>
 
+    <!-- お問い合わせ -->
+    <div class="card mb-4" id="contact">
+        <div class="card-header">
+            <h5 class="mb-0">お問い合わせ・トラブル発生時</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>開発・管理者</h6>
+                    <p class="mb-1"><strong>Laissez-Faire T.C. 11th 渡邉光悦</strong></p>
+                    <ul class="list-unstyled text-muted">
+                        <li><i class="bi bi-envelope"></i> <a href="mailto:kohetsu.watanabe@gmail.com">kohetsu.watanabe@gmail.com</a></li>
+                        <li><i class="bi bi-envelope"></i> <a href="mailto:kohetsu.watanabe@etsu-dx.com">kohetsu.watanabe@etsu-dx.com</a></li>
+                        <li><i class="bi bi-telephone"></i> 080-2671-9571</li>
+                        <li><i class="bi bi-geo-alt"></i> 〒103-0014 東京都中央区日本橋蛎殻町1-22-1<br>
+                            <span class="ms-4">デュークスカーラ日本橋1205号</span></li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>ソースコード</h6>
+                    <p class="text-muted">
+                        このアプリはオープンソースで公開されています。<br>
+                        バグ報告や機能リクエストはGitHubからお願いします。
+                    </p>
+                    <p>
+                        <a href="https://github.com/Etsu5082/CampCalculator" target="_blank" class="btn btn-outline-dark btn-sm">
+                            <i class="bi bi-github"></i> GitHub - CampCalculator
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- フッター -->
     <div class="text-center text-muted mb-4">
-        <p>ご不明な点があれば、会計担当までお問い合わせください。</p>
         <a href="/index.php?route=camps" class="btn btn-primary">合宿一覧に戻る</a>
     </div>
 </div>
