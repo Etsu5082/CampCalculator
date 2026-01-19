@@ -5,6 +5,181 @@
     </button>
 </div>
 
+<!-- 使い方ガイド -->
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info bg-opacity-10 border-info">
+        <a class="d-flex justify-content-between align-items-center text-decoration-none text-dark"
+           data-bs-toggle="collapse" href="#usageGuide" role="button" aria-expanded="false">
+            <span><strong>使い方ガイド</strong> - 初めての方はこちら</span>
+            <i class="bi bi-chevron-down"></i>
+        </a>
+    </div>
+    <div class="collapse" id="usageGuide">
+        <div class="card-body">
+            <h5 class="card-title mb-3">合宿費用計算アプリの使い方</h5>
+
+            <div class="accordion" id="guideAccordion">
+                <!-- Step 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#step1">
+                            <span class="badge bg-primary me-2">1</span> 合宿を作成する
+                        </button>
+                    </h2>
+                    <div id="step1" class="accordion-collapse collapse show" data-bs-parent="#guideAccordion">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>「+ 新規合宿作成」ボタンをクリック</li>
+                                <li>基本情報（合宿名、日程、泊数）を入力</li>
+                                <li>宿泊費用、施設利用料、食事単価、交通費を設定</li>
+                                <li>「保存」をクリック</li>
+                            </ol>
+                            <div class="alert alert-info mb-0">
+                                <small><strong>ポイント:</strong> 過去の合宿を「複製」して、日程と名前を変更するだけで簡単に新しい合宿を作成できます。</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step2">
+                            <span class="badge bg-primary me-2">2</span> 参加者を登録する
+                        </button>
+                    </h2>
+                    <div id="step2" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
+                        <div class="accordion-body">
+                            <p>合宿詳細画面の「参加者管理」タブで参加者を登録します。</p>
+                            <h6>CSV一括登録（おすすめ）</h6>
+                            <ol>
+                                <li>「CSV一括登録」ボタンをクリック</li>
+                                <li>以下の形式でテキストを入力またはペースト：
+                                    <pre class="bg-light p-2 mt-2 mb-2"><code>山田太郎,1男
+佐藤花子,2女
+鈴木一郎,OB
+高橋美咲,OG</code></pre>
+                                </li>
+                                <li>「登録」をクリック</li>
+                            </ol>
+                            <div class="alert alert-warning mb-0">
+                                <small><strong>形式:</strong> 1列目=氏名、2列目=学年性別（1男、2女、3男、4女、OB、OGなど）<br>
+                                全角数字（１男、２女）や「1年男」形式にも対応しています。</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step3">
+                            <span class="badge bg-primary me-2">3</span> 途中参加・途中抜けを設定する
+                        </button>
+                    </h2>
+                    <div id="step3" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
+                        <div class="accordion-body">
+                            <p>デフォルトでは全員が「1日目往路バスから最終日復路バスまで」のフル参加として登録されます。</p>
+                            <ol>
+                                <li>途中参加・途中抜けの人の「編集」ボタンをクリック</li>
+                                <li>「参加開始」「離脱」のタイミングを変更</li>
+                                <li>バス利用の有無を設定</li>
+                                <li>「保存」をクリック</li>
+                            </ol>
+                            <div class="alert alert-info mb-0">
+                                <small><strong>自動計算:</strong> 参加タイミングに応じて、宿泊数・食事の追加/欠食が自動計算されます。</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step4">
+                            <span class="badge bg-primary me-2">4</span> 日程を設定する（オプション）
+                        </button>
+                    </h2>
+                    <div id="step4" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
+                        <div class="accordion-body">
+                            <p>「日程設定」タブで各日の活動内容を設定できます。</p>
+                            <ul>
+                                <li><strong>午前・午後:</strong> テニスコート / 体育館 / なし を選択</li>
+                                <li><strong>コート面数:</strong> 使用する面数を入力（料金計算に使用）</li>
+                                <li><strong>宴会:</strong> 宴会場を使用する日を設定</li>
+                            </ul>
+                            <div class="alert alert-secondary mb-0">
+                                <small>日程設定は任意です。設定しない場合、施設利用料は0円として計算されます。</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step5">
+                            <span class="badge bg-primary me-2">5</span> 雑費を登録する（オプション）
+                        </button>
+                    </h2>
+                    <div id="step5" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
+                        <div class="accordion-body">
+                            <p>「雑費管理」タブで、その他の費用を登録できます。</p>
+                            <ul>
+                                <li>タイムテーブル上のセルをクリックして雑費を追加</li>
+                                <li>項目名と金額を入力</li>
+                                <li><strong>割り勘対象:</strong> そのタイミングに参加していた人で自動的に割り勘</li>
+                            </ul>
+                            <div class="alert alert-info mb-0">
+                                <small><strong>例:</strong> 2日目夜の飲み物代を登録すると、2日目夜に参加していた人だけで割り勘されます。</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 6 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step6">
+                            <span class="badge bg-primary me-2">6</span> 計算結果を確認・出力する
+                        </button>
+                    </h2>
+                    <div id="step6" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>「計算結果を見る」ボタンをクリック</li>
+                                <li>各参加者の負担額と内訳を確認</li>
+                                <li>「途参途抜一覧」で途中参加者のスケジュールを確認</li>
+                                <li>「PDF出力」または「Excel出力」でファイルを保存</li>
+                            </ol>
+                            <div class="alert alert-success mb-0">
+                                <small><strong>出力形式:</strong><br>
+                                - フル参加者は1行にまとめて表示<br>
+                                - 途中参加・途中抜けは個別に詳細表示<br>
+                                - 途参途抜一覧で各スロットの参加状況を○×で表示</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <h6>よくある質問</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>Q: 食事の追加/欠食はどう計算される？</strong></p>
+                    <p class="text-muted small">A: 1泊に含まれる食事は「その日の夕食、翌日の朝食・昼食」です。参加タイミングにより自動で追加/欠食が計算されます。</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>Q: 端数はどうなる？</strong></p>
+                    <p class="text-muted small">A: 割り勘計算は四捨五入されます。合計の端数は会計担当が調整してください。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="campList" class="row">
     <div class="col-12 text-center py-5">
         <div class="spinner-border" role="status">
