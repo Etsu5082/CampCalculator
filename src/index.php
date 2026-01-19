@@ -92,6 +92,7 @@ $router->get('/camps', 'PageController@camps');
 $router->get('/camps/{id}', 'PageController@campDetail');
 $router->get('/camps/{id}/result', 'PageController@result');
 $router->get('/camps/{id}/partial-schedule', 'PageController@partialSchedule');
+$router->get('/guide', 'PageController@guide');
 
 // ルーティング実行
 $router->dispatch();

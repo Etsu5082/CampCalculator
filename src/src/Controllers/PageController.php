@@ -98,6 +98,15 @@ class PageController
     }
 
     /**
+     * 使い方ガイドページ
+     */
+    public function guide(array $params): void
+    {
+        Auth::requireAuth();
+        $this->render('guide');
+    }
+
+    /**
      * ビューのレンダリング
      */
     private function render(string $view, array $data = []): void

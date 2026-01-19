@@ -176,6 +176,12 @@
                     <p class="text-muted small">A: 割り勘計算は四捨五入されます。合計の端数は会計担当が調整してください。</p>
                 </div>
             </div>
+
+            <div class="text-center mt-3">
+                <a href="/index.php?route=guide" class="btn btn-outline-info">
+                    詳細な使い方ガイドを見る →
+                </a>
+            </div>
         </div>
     </div>
 </div>
