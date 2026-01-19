@@ -17,6 +17,9 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item me-2">
+                        <a class="btn btn-outline-light btn-sm" href="<?= url('/guide') ?>">使い方ガイド</a>
+                    </li>
                     <li class="nav-item">
                         <button class="btn btn-outline-light btn-sm" onclick="logout()">ログアウト</button>
                     </li>
