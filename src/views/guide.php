@@ -677,13 +677,24 @@
 
 <!-- AIチャットボット（フローティング） -->
 <div id="chatbot-container">
-    <!-- チャットボタン -->
-    <button id="chatbot-toggle" class="btn btn-primary rounded-circle shadow" style="width: 60px; height: 60px; position: fixed; bottom: 20px; right: 20px; z-index: 1050;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-            <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
-        </svg>
-    </button>
+    <!-- 初回案内ツールチップ -->
+    <div id="chatbot-tooltip" class="chatbot-tooltip">
+        <span>使い方で困ったら質問してね！</span>
+        <button type="button" class="chatbot-tooltip-close">&times;</button>
+    </div>
+
+    <!-- チャットボタン（ラベル付き） -->
+    <div id="chatbot-toggle-wrapper" style="position: fixed; bottom: 20px; right: 20px; z-index: 1050;">
+        <button id="chatbot-toggle" class="chatbot-button">
+            <span class="chatbot-button-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                    <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
+                </svg>
+            </span>
+            <span class="chatbot-button-label">AIに質問</span>
+        </button>
+    </div>
 
     <!-- チャットウィンドウ -->
     <div id="chatbot-window" class="card shadow-lg" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 380px; max-height: 500px; z-index: 1050;">
@@ -707,8 +718,8 @@
                 AI機能は現在無効です
             </div>
             <form id="chatbot-form" class="d-flex gap-2">
-                <input type="text" class="form-control form-control-sm" id="chatbot-input" placeholder="質問を入力..." maxlength="500">
-                <button type="submit" class="btn btn-primary btn-sm" id="chatbot-submit">
+                <input type="text" class="form-control" id="chatbot-input" placeholder="質問を入力..." maxlength="500" style="font-size: 16px;">
+                <button type="submit" class="btn btn-primary" id="chatbot-submit">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
                     </svg>
@@ -719,6 +730,97 @@
 </div>
 
 <style>
+/* チャットボタン - 目立つデザイン */
+.chatbot-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: pulse 2s infinite;
+    font-weight: bold;
+    font-size: 15px;
+}
+.chatbot-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+.chatbot-button-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.chatbot-button-label {
+    white-space: nowrap;
+}
+@keyframes pulse {
+    0% {
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 25px rgba(102, 126, 234, 0.7), 0 0 0 10px rgba(102, 126, 234, 0.1);
+    }
+    100% {
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+}
+
+/* 初回案内ツールチップ */
+.chatbot-tooltip {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: #333;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    z-index: 1051;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: bounce 0.5s ease, fadeIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.chatbot-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    right: 30px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #333;
+}
+.chatbot-tooltip-close {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+.chatbot-tooltip-close:hover {
+    color: white;
+}
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* メッセージスタイル */
 #chatbot-messages .message {
     margin-bottom: 12px;
     padding: 8px 12px;
@@ -758,6 +860,29 @@
     0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
     40% { transform: scale(1); opacity: 1; }
 }
+
+/* スマホ対応 */
+@media (max-width: 480px) {
+    #chatbot-window {
+        width: calc(100vw - 20px) !important;
+        right: 10px !important;
+        bottom: 80px !important;
+        max-height: 70vh !important;
+    }
+    #chatbot-toggle-wrapper {
+        right: 10px !important;
+        bottom: 10px !important;
+    }
+    .chatbot-tooltip {
+        right: 10px !important;
+        bottom: 70px !important;
+        max-width: calc(100vw - 40px);
+    }
+    .chatbot-button {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+}
 </style>
 
 <script>
@@ -770,8 +895,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const messages = document.getElementById('chatbot-messages');
     const disabledNotice = document.getElementById('chatbot-disabled-notice');
     const submitBtn = document.getElementById('chatbot-submit');
+    const tooltip = document.getElementById('chatbot-tooltip');
+    const tooltipClose = document.querySelector('.chatbot-tooltip-close');
 
     let isEnabled = false;
+
+    // ツールチップの表示制御（初回のみ表示）
+    if (sessionStorage.getItem('chatbot_tooltip_closed')) {
+        tooltip.style.display = 'none';
+    }
+
+    // ツールチップを閉じる
+    tooltipClose.addEventListener('click', function() {
+        tooltip.style.display = 'none';
+        sessionStorage.setItem('chatbot_tooltip_closed', 'true');
+    });
 
     // チャットボットの状態を確認
     async function checkStatus() {
@@ -791,6 +929,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // トグル
     toggle.addEventListener('click', function() {
+        // ツールチップを非表示
+        tooltip.style.display = 'none';
+        sessionStorage.setItem('chatbot_tooltip_closed', 'true');
+
         const isVisible = window_.style.display !== 'none';
         window_.style.display = isVisible ? 'none' : 'block';
         if (!isVisible) {

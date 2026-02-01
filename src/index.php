@@ -89,6 +89,13 @@ $router->get('/api/camps/{id}/export/excel', 'ExportController@excel');
 $router->get('/api/chatbot/status', 'ChatbotController@status');
 $router->post('/api/chatbot/ask', 'ChatbotController@ask');
 
+// PDF読み取りルート
+$router->get('/pdf/upload', 'PdfUploadController@index');
+$router->post('/pdf/upload', 'PdfUploadController@upload');
+$router->get('/pdf/review', 'PdfUploadController@review');
+$router->post('/pdf/apply', 'PdfUploadController@apply');
+$router->get('/pdf/cancel', 'PdfUploadController@cancel');
+
 // ページルート（HTML表示）
 $router->get('/', 'PageController@index');
 $router->get('/login', 'PageController@login');

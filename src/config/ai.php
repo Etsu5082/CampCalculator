@@ -4,7 +4,7 @@
  */
 
 return [
-    // Anthropic APIキー（環境変数から取得、または直接設定）
+    // Anthropic APIキー（環境変数から取得）
     'anthropic_api_key' => getenv('ANTHROPIC_API_KEY') ?: '',
 
     // 使用するモデル（コスト効率の良いHaikuを推奨）

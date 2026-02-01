@@ -24,3 +24,7 @@ vendor/
 
 # Node（使用する場合）
 node_modules/
+
+# アップロードファイル
+src/uploads/
+!src/uploads/temp/.gitkeep
