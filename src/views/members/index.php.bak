@@ -1,0 +1,799 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>会員名簿管理</h1>
+    <div>
+        <button class="btn btn-outline-primary me-2" onclick="showImportModal()">
+            <i class="bi bi-upload"></i> インポート
+        </button>
+        <button class="btn btn-outline-warning me-2" onclick="showGradeUpdateModal()">
+            <i class="bi bi-arrow-up-circle"></i> 新学期処理
+        </button>
+        <button class="btn btn-primary" onclick="showCreateModal()">
+            + 会員を追加
+        </button>
+    </div>
+</div>
+
+<!-- 検索・フィルタ -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">検索</label>
+                <input type="text" class="form-control" id="searchQuery" placeholder="名前またはカナで検索..." oninput="debounceSearch()">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">学年</label>
+                <select class="form-select" id="filterGrade" onchange="loadMembers()">
+                    <option value="">すべて</option>
+                    <option value="1">1年</option>
+                    <option value="2">2年</option>
+                    <option value="3">3年</option>
+                    <option value="4">4年</option>
+                    <option value="M1">M1</option>
+                    <option value="M2">M2</option>
+                    <option value="OB">OB</option>
+                    <option value="OG">OG</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">学部</label>
+                <select class="form-select" id="filterFaculty" onchange="loadMembers()">
+                    <option value="">すべて</option>
+                    <option value="基幹理工学部">基幹理工学部</option>
+                    <option value="創造理工学部">創造理工学部</option>
+                    <option value="先進理工学部">先進理工学部</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">ステータス</label>
+                <select class="form-select" id="filterStatus" onchange="loadMembers()">
+                    <option value="active">現役</option>
+                    <option value="">すべて</option>
+                    <option value="pending">承認待ち</option>
+                    <option value="ob_og">OB/OG</option>
+                    <option value="withdrawn">退会</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                    リセット
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 集計情報 -->
+<div class="row mb-3">
+    <div class="col-md-12">
+        <span id="memberCount" class="text-muted">読み込み中...</span>
+        <span class="ms-3">
+            <a href="/index.php?route=members/pending" class="text-decoration-none">
+                <span class="badge bg-warning" id="pendingBadge" style="display:none;">承認待ち: <span id="pendingCount">0</span>件</span>
+            </a>
+        </span>
+    </div>
+</div>
+
+<!-- 会員一覧テーブル -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>名前</th>
+                    <th>学年</th>
+                    <th>学部</th>
+                    <th>学科/学系</th>
+                    <th>学籍番号</th>
+                    <th>ステータス</th>
+                    <th width="100">操作</th>
+                </tr>
+            </thead>
+            <tbody id="memberTableBody">
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">読み込み中...</span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ページネーション -->
+<nav class="mt-3" id="pagination"></nav>
+
+<!-- 会員編集モーダル -->
+<div class="modal fade" id="memberModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="memberModalTitle">会員情報編集</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="memberForm">
+                    <input type="hidden" id="memberId">
+
+                    <h6 class="border-bottom pb-2 mb-3">基本情報</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">名前（漢字）<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nameKanji" required placeholder="山田 太郎">
+                            <small class="text-muted">全角スペース区切り</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">名前（カタカナ）<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nameKana" required placeholder="ヤマダ タロウ">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">性別 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="gender" required>
+                                <option value="male">男性</option>
+                                <option value="female">女性</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">学年 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="grade" required>
+                                <option value="1">1年</option>
+                                <option value="2">2年</option>
+                                <option value="3">3年</option>
+                                <option value="4">4年</option>
+                                <option value="M1">M1</option>
+                                <option value="M2">M2</option>
+                                <option value="OB">OB</option>
+                                <option value="OG">OG</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">生年月日 <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="birthdate" required>
+                        </div>
+                    </div>
+
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">所属情報</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">学籍番号 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="studentId" required placeholder="1Y22F158-5" oninput="parseStudentId()">
+                            <small class="text-muted">CDあり（例: 1Y22F158-5）</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="studentIdParseResult" class="alert alert-info mb-0 mt-4" style="display:none;"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">学部 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="faculty" required onchange="updateDepartmentOptions()">
+                                <option value="">選択してください</option>
+                                <option value="基幹理工学部">基幹理工学部</option>
+                                <option value="創造理工学部">創造理工学部</option>
+                                <option value="先進理工学部">先進理工学部</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">学科/学系 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="department" required>
+                                <option value="">選択してください</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">連絡先</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">電話番号 <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="phone" required placeholder="090-1234-5678">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">緊急連絡先 <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="emergencyContact" required placeholder="03-1234-5678">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">住所 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="address" required placeholder="東京都新宿区西早稲田1-2-3">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">メールアドレス</label>
+                            <input type="email" class="form-control" id="email" placeholder="example@email.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">LINE名 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="lineName" required placeholder="yamada_taro">
+                        </div>
+                    </div>
+
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">その他</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">アレルギー</label>
+                            <input type="text" class="form-control" id="allergy" placeholder="なし">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">都営登録番号</label>
+                            <input type="text" class="form-control" id="sportsRegistrationNo" placeholder="12345678">
+                            <small class="text-muted">8桁の番号</small>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="snsAllowed" checked>
+                                <label class="form-check-label" for="snsAllowed">SNSへの写真投稿を許可</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ステータス</label>
+                            <select class="form-select" id="status">
+                                <option value="pending">承認待ち</option>
+                                <option value="active">現役</option>
+                                <option value="ob_og">OB/OG</option>
+                                <option value="withdrawn">退会</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger me-auto" id="deleteMemberBtn" onclick="deleteMember()" style="display:none;">削除</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="saveMember()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- インポートモーダル -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">会員一括インポート</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <strong>Excel/CSVファイルから会員を一括登録します</strong>
+                    <p class="mb-0 mt-2">既存の学籍番号と重複する場合は上書きされます。</p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">ファイルを選択</label>
+                    <input type="file" class="form-control" id="importFile" accept=".xlsx,.xls,.csv">
+                </div>
+
+                <h6>必須列（1行目にヘッダー）</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <tr>
+                            <td>名前（漢字）</td>
+                            <td>名前（カタカナ）</td>
+                            <td>性別</td>
+                            <td>学年</td>
+                            <td>学部</td>
+                        </tr>
+                        <tr>
+                            <td>学科</td>
+                            <td>学籍番号</td>
+                            <td>電話番号</td>
+                            <td>住所</td>
+                            <td>緊急連絡先</td>
+                        </tr>
+                        <tr>
+                            <td>生年月日</td>
+                            <td>アレルギー</td>
+                            <td>LINE名</td>
+                            <td>SNS投稿可否</td>
+                            <td>都営登録番号</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="importMembers()">インポート</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新学期処理モーダル -->
+<div class="modal fade" id="gradeUpdateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">新学期 学年更新処理</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <strong>注意:</strong> 全会員の学年を一括で更新します。この操作は元に戻せません。
+                </div>
+
+                <h6>更新内容</h6>
+                <ul id="gradeUpdatePreview">
+                    <li>読み込み中...</li>
+                </ul>
+
+                <h6 class="mt-3">卒業処理（4年/M2）</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="graduateAction" id="graduateKeep" value="ob_og" checked>
+                    <label class="form-check-label" for="graduateKeep">OB/OGとして名簿に残す（推奨）</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="graduateAction" id="graduateWithdraw" value="withdrawn">
+                    <label class="form-check-label" for="graduateWithdraw">退会扱いにする</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-warning" onclick="executeGradeUpdate()">実行</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let memberModal, importModal, gradeUpdateModal;
+let currentPage = 1;
+let searchTimeout;
+
+// 学科/学系のマッピング
+const departmentOptions = {
+    '基幹理工学部': {
+        gakukei_old: ['学系Ⅰ', '学系Ⅱ', '学系Ⅲ'],
+        gakukei_new: ['学系Ⅰ（数学系）', '学系Ⅱ（工学系）', '学系Ⅲ（情報系）', '学系Ⅳ（メディア系）'],
+        departments: ['数学科', '応用数理学科', '機械科学・航空宇宙学科', '電子物理システム学科', '情報理工学科', '情報通信学科', '表現工学科']
+    },
+    '創造理工学部': {
+        departments: ['建築学科', '総合機械工学科', '経営システム工学科', '社会環境工学科', '環境資源工学科', '社会文化領域']
+    },
+    '先進理工学部': {
+        departments: ['物理学科', '応用物理学科', '化学・生命化学科', '応用化学科', '生命医科学科', '電気・情報生命工学科']
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    memberModal = new bootstrap.Modal(document.getElementById('memberModal'));
+    importModal = new bootstrap.Modal(document.getElementById('importModal'));
+    gradeUpdateModal = new bootstrap.Modal(document.getElementById('gradeUpdateModal'));
+    loadMembers();
+    loadPendingCount();
+});
+
+function debounceSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        currentPage = 1;
+        loadMembers();
+    }, 300);
+}
+
+async function loadMembers() {
+    const params = new URLSearchParams({
+        page: currentPage,
+        search: document.getElementById('searchQuery').value,
+        grade: document.getElementById('filterGrade').value,
+        faculty: document.getElementById('filterFaculty').value,
+        status: document.getElementById('filterStatus').value
+    });
+
+    try {
+        const res = await fetch(`/index.php?route=api/members&${params}`);
+        const data = await res.json();
+
+        if (data.success) {
+            renderMembers(data.data.members);
+            renderPagination(data.data.pagination);
+            document.getElementById('memberCount').textContent = `全 ${data.data.pagination.total} 名`;
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function loadPendingCount() {
+    try {
+        const res = await fetch('/index.php?route=api/members/pending/count');
+        const data = await res.json();
+
+        if (data.success && data.data.count > 0) {
+            document.getElementById('pendingCount').textContent = data.data.count;
+            document.getElementById('pendingBadge').style.display = 'inline';
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderMembers(members) {
+    const tbody = document.getElementById('memberTableBody');
+
+    if (members.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">会員が見つかりません</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = members.map(m => `
+        <tr>
+            <td>
+                <strong>${escapeHtml(m.name_kanji)}</strong>
+                <br><small class="text-muted">${escapeHtml(m.name_kana)}</small>
+            </td>
+            <td>${formatGrade(m.grade, m.gender)}</td>
+            <td>${escapeHtml(m.faculty)}</td>
+            <td>${escapeHtml(m.department)}${m.department_not_set ? '<span class="badge bg-warning ms-1">要選択</span>' : ''}</td>
+            <td><code>${escapeHtml(m.student_id)}</code></td>
+            <td>${formatStatus(m.status)}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="editMember(${m.id})">編集</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function formatGrade(grade, gender) {
+    if (grade === 'OB' || grade === 'OG') {
+        return `<span class="badge bg-secondary">${grade}</span>`;
+    }
+    const suffix = gender === 'male' ? '男' : '女';
+    return `${grade}年${suffix}`;
+}
+
+function formatStatus(status) {
+    const statusMap = {
+        'pending': '<span class="badge bg-warning">承認待ち</span>',
+        'active': '<span class="badge bg-success">現役</span>',
+        'ob_og': '<span class="badge bg-secondary">OB/OG</span>',
+        'withdrawn': '<span class="badge bg-dark">退会</span>'
+    };
+    return statusMap[status] || status;
+}
+
+function renderPagination(pagination) {
+    const nav = document.getElementById('pagination');
+    if (pagination.total_pages <= 1) {
+        nav.innerHTML = '';
+        return;
+    }
+
+    let html = '<ul class="pagination justify-content-center">';
+
+    // 前へ
+    html += `<li class="page-item ${pagination.current_page === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="goToPage(${pagination.current_page - 1})">前へ</a>
+    </li>`;
+
+    // ページ番号
+    for (let i = 1; i <= pagination.total_pages; i++) {
+        if (i === 1 || i === pagination.total_pages || Math.abs(i - pagination.current_page) <= 2) {
+            html += `<li class="page-item ${i === pagination.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+            </li>`;
+        } else if (Math.abs(i - pagination.current_page) === 3) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+
+    // 次へ
+    html += `<li class="page-item ${pagination.current_page === pagination.total_pages ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="goToPage(${pagination.current_page + 1})">次へ</a>
+    </li>`;
+
+    html += '</ul>';
+    nav.innerHTML = html;
+}
+
+function goToPage(page) {
+    currentPage = page;
+    loadMembers();
+    return false;
+}
+
+function resetFilters() {
+    document.getElementById('searchQuery').value = '';
+    document.getElementById('filterGrade').value = '';
+    document.getElementById('filterFaculty').value = '';
+    document.getElementById('filterStatus').value = 'active';
+    currentPage = 1;
+    loadMembers();
+}
+
+function showCreateModal() {
+    document.getElementById('memberModalTitle').textContent = '会員を追加';
+    document.getElementById('memberId').value = '';
+    document.getElementById('memberForm').reset();
+    document.getElementById('deleteMemberBtn').style.display = 'none';
+    document.getElementById('status').value = 'active';
+    document.getElementById('snsAllowed').checked = true;
+    document.getElementById('studentIdParseResult').style.display = 'none';
+    memberModal.show();
+}
+
+async function editMember(id) {
+    try {
+        const res = await fetch(`/index.php?route=api/members/${id}`);
+        const data = await res.json();
+
+        if (data.success) {
+            const m = data.data;
+            document.getElementById('memberModalTitle').textContent = '会員情報編集';
+            document.getElementById('memberId').value = m.id;
+            document.getElementById('nameKanji').value = m.name_kanji;
+            document.getElementById('nameKana').value = m.name_kana;
+            document.getElementById('gender').value = m.gender;
+            document.getElementById('grade').value = m.grade;
+            document.getElementById('birthdate').value = m.birthdate;
+            document.getElementById('studentId').value = m.student_id;
+            document.getElementById('faculty').value = m.faculty;
+            updateDepartmentOptions();
+            document.getElementById('department').value = m.department;
+            document.getElementById('phone').value = m.phone;
+            document.getElementById('emergencyContact').value = m.emergency_contact;
+            document.getElementById('address').value = m.address;
+            document.getElementById('email').value = m.email || '';
+            document.getElementById('lineName').value = m.line_name;
+            document.getElementById('allergy').value = m.allergy || '';
+            document.getElementById('sportsRegistrationNo').value = m.sports_registration_no || '';
+            document.getElementById('snsAllowed').checked = m.sns_allowed == 1;
+            document.getElementById('status').value = m.status;
+            document.getElementById('deleteMemberBtn').style.display = 'block';
+            document.getElementById('studentIdParseResult').style.display = 'none';
+            memberModal.show();
+        }
+    } catch (err) {
+        alert('会員情報の取得に失敗しました');
+    }
+}
+
+function updateDepartmentOptions() {
+    const faculty = document.getElementById('faculty').value;
+    const grade = document.getElementById('grade').value;
+    const deptSelect = document.getElementById('department');
+
+    deptSelect.innerHTML = '<option value="">選択してください</option>';
+
+    if (!faculty || !departmentOptions[faculty]) return;
+
+    const opts = departmentOptions[faculty];
+
+    if (faculty === '基幹理工学部') {
+        // 基幹理工学部の場合、学年によって選択肢が異なる
+        if (grade === '1') {
+            // 1年生は学系を選択（入学年度で判断）
+            const studentId = document.getElementById('studentId').value;
+            const yearMatch = studentId.match(/^1W(\d{2})/);
+            const enrollmentYear = yearMatch ? 2000 + parseInt(yearMatch[1]) : new Date().getFullYear();
+
+            const gakukeiList = enrollmentYear >= 2025 ? opts.gakukei_new : opts.gakukei_old;
+            gakukeiList.forEach(g => {
+                deptSelect.innerHTML += `<option value="${g}">${g}</option>`;
+            });
+        } else {
+            // 2年生以上は学科を選択
+            opts.departments.forEach(d => {
+                deptSelect.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+        }
+    } else {
+        // 創造・先進は学科のみ
+        opts.departments.forEach(d => {
+            deptSelect.innerHTML += `<option value="${d}">${d}</option>`;
+        });
+    }
+}
+
+async function parseStudentId() {
+    const studentId = document.getElementById('studentId').value;
+    if (studentId.length < 5) {
+        document.getElementById('studentIdParseResult').style.display = 'none';
+        return;
+    }
+
+    try {
+        const res = await fetch(`/index.php?route=api/members/parse-student-id&student_id=${encodeURIComponent(studentId)}`);
+        const data = await res.json();
+
+        const resultDiv = document.getElementById('studentIdParseResult');
+
+        if (data.success && data.data.is_valid) {
+            const d = data.data;
+            resultDiv.innerHTML = `
+                <small>
+                    <strong>自動判定:</strong> ${escapeHtml(d.faculty)} ${d.enrollment_year}年入学
+                    ${d.department ? `<br>学科: ${escapeHtml(d.department)}` : ''}
+                </small>
+            `;
+            resultDiv.className = 'alert alert-success mb-0 mt-2 py-2';
+            resultDiv.style.display = 'block';
+
+            // フォームに自動入力
+            document.getElementById('faculty').value = d.faculty;
+            updateDepartmentOptions();
+            if (d.department) {
+                document.getElementById('department').value = d.department;
+            }
+        } else {
+            resultDiv.innerHTML = '<small>学籍番号の形式が正しくありません</small>';
+            resultDiv.className = 'alert alert-warning mb-0 mt-2 py-2';
+            resultDiv.style.display = 'block';
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function saveMember() {
+    const id = document.getElementById('memberId').value;
+
+    const data = {
+        name_kanji: document.getElementById('nameKanji').value,
+        name_kana: document.getElementById('nameKana').value,
+        gender: document.getElementById('gender').value,
+        grade: document.getElementById('grade').value,
+        birthdate: document.getElementById('birthdate').value,
+        student_id: document.getElementById('studentId').value,
+        faculty: document.getElementById('faculty').value,
+        department: document.getElementById('department').value,
+        phone: document.getElementById('phone').value,
+        emergency_contact: document.getElementById('emergencyContact').value,
+        address: document.getElementById('address').value,
+        email: document.getElementById('email').value,
+        line_name: document.getElementById('lineName').value,
+        allergy: document.getElementById('allergy').value,
+        sports_registration_no: document.getElementById('sportsRegistrationNo').value,
+        sns_allowed: document.getElementById('snsAllowed').checked ? 1 : 0,
+        status: document.getElementById('status').value
+    };
+
+    const url = id ? `/index.php?route=api/members/${id}` : '/index.php?route=api/members';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            memberModal.hide();
+            loadMembers();
+            showToast('保存しました');
+        } else {
+            alert(result.error?.message || '保存に失敗しました');
+        }
+    } catch (err) {
+        alert('通信エラーが発生しました');
+    }
+}
+
+async function deleteMember() {
+    const id = document.getElementById('memberId').value;
+    if (!confirm('この会員を削除しますか？\n\n※関連する申し込みデータも削除されます。')) return;
+
+    try {
+        const res = await fetch(`/index.php?route=api/members/${id}`, {
+            method: 'DELETE'
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            memberModal.hide();
+            loadMembers();
+            showToast('削除しました');
+        } else {
+            alert(result.error?.message || '削除に失敗しました');
+        }
+    } catch (err) {
+        alert('通信エラーが発生しました');
+    }
+}
+
+function showImportModal() {
+    document.getElementById('importFile').value = '';
+    importModal.show();
+}
+
+async function importMembers() {
+    const fileInput = document.getElementById('importFile');
+    if (!fileInput.files || !fileInput.files[0]) {
+        alert('ファイルを選択してください');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    try {
+        const res = await fetch('/index.php?route=api/members/import', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            importModal.hide();
+            loadMembers();
+            showToast(`${result.data.imported}名をインポートしました`);
+        } else {
+            alert(result.error?.message || 'インポートに失敗しました');
+        }
+    } catch (err) {
+        alert('通信エラーが発生しました');
+    }
+}
+
+async function showGradeUpdateModal() {
+    try {
+        const res = await fetch('/index.php?route=api/members/grade-update/preview');
+        const data = await res.json();
+
+        if (data.success) {
+            const preview = data.data;
+            let html = '';
+            if (preview['1_to_2']) html += `<li>1年 → 2年: ${preview['1_to_2']}名</li>`;
+            if (preview['2_to_3']) html += `<li>2年 → 3年: ${preview['2_to_3']}名</li>`;
+            if (preview['3_to_4']) html += `<li>3年 → 4年: ${preview['3_to_4']}名</li>`;
+            if (preview['4_to_ob']) html += `<li>4年 → OB/OG: ${preview['4_to_ob']}名</li>`;
+            if (preview['m1_to_m2']) html += `<li>M1 → M2: ${preview['m1_to_m2']}名</li>`;
+            if (preview['m2_to_ob']) html += `<li>M2 → OB/OG: ${preview['m2_to_ob']}名</li>`;
+            if (preview['kikan_2_needs_dept']) {
+                html += `<li class="text-warning">基幹理工学部の新2年生（学科選択が必要）: ${preview['kikan_2_needs_dept']}名</li>`;
+            }
+
+            document.getElementById('gradeUpdatePreview').innerHTML = html || '<li>更新対象なし</li>';
+        }
+    } catch (err) {
+        console.error(err);
+    }
+
+    gradeUpdateModal.show();
+}
+
+async function executeGradeUpdate() {
+    if (!confirm('学年更新を実行しますか？この操作は元に戻せません。')) return;
+
+    const graduateAction = document.querySelector('input[name="graduateAction"]:checked').value;
+
+    try {
+        const res = await fetch('/index.php?route=api/members/grade-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ graduate_action: graduateAction })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            gradeUpdateModal.hide();
+            loadMembers();
+            showToast(`学年更新が完了しました（${result.data.updated}名更新）`);
+        } else {
+            alert(result.error?.message || '学年更新に失敗しました');
+        }
+    } catch (err) {
+        alert('通信エラーが発生しました');
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>

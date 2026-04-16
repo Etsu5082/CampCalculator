@@ -43,6 +43,15 @@ class Request
     }
 
     /**
+     * パラメータが存在するかチェック
+     */
+    public static function has(string $key): bool
+    {
+        $json = self::json();
+        return isset($json[$key]) || isset($_POST[$key]) || isset($_GET[$key]);
+    }
+
+    /**
      * 全パラメータ取得
      */
     public static function all(): array

@@ -39,7 +39,7 @@ class Camp
     {
         $sql = "INSERT INTO camps (
             name, start_date, end_date, nights,
-            lodging_fee_per_night,
+            lodging_fee_per_night, hot_spring_tax,
             breakfast_add_price, breakfast_remove_price,
             lunch_add_price, lunch_remove_price,
             dinner_add_price, dinner_remove_price,
@@ -48,7 +48,7 @@ class Camp
             bus_fee_outbound, bus_fee_return,
             highway_fee_outbound, highway_fee_return,
             use_rental_car, rental_car_fee, rental_car_highway_fee, rental_car_capacity
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         return $this->db->insert($sql, [
             $data['name'],
@@ -56,6 +56,7 @@ class Camp
             $data['end_date'],
             $data['nights'],
             $data['lodging_fee_per_night'] ?? 0,
+            $data['hot_spring_tax'] ?? 0,
             $data['breakfast_add_price'] ?? 0,
             $data['breakfast_remove_price'] ?? 0,
             $data['lunch_add_price'] ?? 0,
@@ -90,7 +91,7 @@ class Camp
 
         $allowedFields = [
             'name', 'start_date', 'end_date', 'nights',
-            'lodging_fee_per_night',
+            'lodging_fee_per_night', 'hot_spring_tax',
             'breakfast_add_price', 'breakfast_remove_price',
             'lunch_add_price', 'lunch_remove_price',
             'dinner_add_price', 'dinner_remove_price',
@@ -152,7 +153,10 @@ class Camp
             // 5. 雑費を削除
             $this->db->execute("DELETE FROM expenses WHERE camp_id = ?", [$id]);
 
-            // 6. 合宿を削除
+            // 6. 申し込みを削除
+            $this->db->execute("DELETE FROM camp_applications WHERE camp_id = ?", [$id]);
+
+            // 7. 合宿を削除
             $result = $this->db->execute("DELETE FROM camps WHERE id = ?", [$id]) > 0;
 
             $this->db->commit();

@@ -48,6 +48,7 @@ class CampController
         $camp['time_slots'] = $timeSlotModel->getByCampId($id);
         $camp['participants'] = $participantModel->getByCampId($id);
         $camp['expenses'] = $expenseModel->getByCampId($id);
+        $camp['duplicate_participant_ids'] = $participantModel->getDuplicateIds($id);
 
         Response::success($camp);
     }
@@ -70,7 +71,7 @@ class CampController
 
         $data = Request::only([
             'name', 'start_date', 'end_date', 'nights',
-            'lodging_fee_per_night',
+            'lodging_fee_per_night', 'hot_spring_tax',
             'breakfast_add_price', 'breakfast_remove_price',
             'lunch_add_price', 'lunch_remove_price',
             'dinner_add_price', 'dinner_remove_price',
@@ -112,7 +113,7 @@ class CampController
 
         $data = Request::only([
             'name', 'start_date', 'end_date', 'nights',
-            'lodging_fee_per_night',
+            'lodging_fee_per_night', 'hot_spring_tax',
             'breakfast_add_price', 'breakfast_remove_price',
             'lunch_add_price', 'lunch_remove_price',
             'dinner_add_price', 'dinner_remove_price',
@@ -181,5 +182,136 @@ class CampController
         } catch (Exception $e) {
             Response::error('合宿の複製に失敗しました: ' . $e->getMessage(), 500, 'DUPLICATE_ERROR');
         }
+    }
+
+    /**
+     * 申し込みURL取得
+     */
+    public function getApplicationUrl(array $params): void
+    {
+        $campId = (int)$params['id'];
+
+        $camp = $this->model->find($campId);
+        if (!$camp) {
+            Response::error('合宿が見つかりません', 404, 'NOT_FOUND');
+            return;
+        }
+
+        $tokenModel = new CampToken();
+        $token = $tokenModel->findActiveByCampId($campId);
+
+        // ベースURL取得
+        $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http');
+        $baseUrl .= '://' . $_SERVER['HTTP_HOST'];
+
+        $result = [
+            'has_token' => $token !== null,
+            'token' => $token,
+        ];
+
+        if ($token) {
+            $result['url'] = $baseUrl . '/apply/' . $token['token'];
+        }
+
+        Response::success($result);
+    }
+
+    /**
+     * 申し込みURL発行
+     */
+    public function generateApplicationUrl(array $params): void
+    {
+        $campId = (int)$params['id'];
+
+        $camp = $this->model->find($campId);
+        if (!$camp) {
+            Response::error('合宿が見つかりません', 404, 'NOT_FOUND');
+            return;
+        }
+
+        $data = Request::only(['deadline']);
+        $data['camp_id'] = $campId;
+        $data['is_active'] = 1;
+
+        $tokenModel = new CampToken();
+
+        try {
+            // 既存の有効なトークンを無効化
+            $existingToken = $tokenModel->findActiveByCampId($campId);
+            if ($existingToken) {
+                $tokenModel->deactivate($existingToken['id']);
+            }
+
+            // 新しいトークン発行
+            $tokenId = $tokenModel->create($data);
+            $token = $tokenModel->find($tokenId);
+
+            // ベースURL取得
+            $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http');
+            $baseUrl .= '://' . $_SERVER['HTTP_HOST'];
+
+            $result = [
+                'token' => $token,
+                'url' => $baseUrl . '/apply/' . $token['token'],
+            ];
+
+            Response::success($result, '申し込みURLを発行しました');
+
+        } catch (Exception $e) {
+            Response::error('URL発行に失敗しました: ' . $e->getMessage(), 500, 'GENERATE_ERROR');
+        }
+    }
+
+    /**
+     * 申し込みURL設定更新
+     */
+    public function updateApplicationUrl(array $params): void
+    {
+        $campId = (int)$params['id'];
+
+        $camp = $this->model->find($campId);
+        if (!$camp) {
+            Response::error('合宿が見つかりません', 404, 'NOT_FOUND');
+            return;
+        }
+
+        $tokenModel = new CampToken();
+        $token = $tokenModel->findActiveByCampId($campId);
+
+        if (!$token) {
+            Response::error('有効なトークンが見つかりません', 404, 'TOKEN_NOT_FOUND');
+            return;
+        }
+
+        $data = Request::only(['deadline', 'is_active']);
+
+        try {
+            $tokenModel->update($token['id'], $data);
+            $updated = $tokenModel->find($token['id']);
+
+            Response::success(['token' => $updated], '設定を更新しました');
+
+        } catch (Exception $e) {
+            Response::error('更新に失敗しました: ' . $e->getMessage(), 500, 'UPDATE_ERROR');
+        }
+    }
+
+    /**
+     * 申し込み一覧取得
+     */
+    public function getApplications(array $params): void
+    {
+        $campId = (int)$params['id'];
+
+        $camp = $this->model->find($campId);
+        if (!$camp) {
+            Response::error('合宿が見つかりません', 404, 'NOT_FOUND');
+            return;
+        }
+
+        $applicationModel = new CampApplication();
+        $applications = $applicationModel->getByCampId($campId);
+
+        Response::success(['applications' => $applications]);
     }
 }

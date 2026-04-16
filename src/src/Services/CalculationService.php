@@ -92,7 +92,18 @@ class CalculationService
             $breakdown['total'] += $lodgingFee;
         }
 
-        // 2. 保険料（固定）
+        // 2. 入湯税（1泊あたり）
+        $hotSpringTax = ($camp['hot_spring_tax'] ?? 0) * $nights;
+        if ($hotSpringTax > 0) {
+            $breakdown['items'][] = [
+                'category' => 'hot_spring_tax',
+                'name' => "入湯税 ({$nights}泊)",
+                'amount' => $hotSpringTax,
+            ];
+            $breakdown['total'] += $hotSpringTax;
+        }
+
+        // 3. 保険料（固定）
         $breakdown['items'][] = [
             'category' => 'insurance',
             'name' => '保険料',
@@ -100,7 +111,7 @@ class CalculationService
         ];
         $breakdown['total'] += $camp['insurance_fee'];
 
-        // 3. 食事調整（タイミングに基づく自動減算 + 手動調整）
+        // 4. 食事調整（タイミングに基づく自動減算 + 手動調整）
         $autoMealAdjustment = $this->calculateAutoMealAdjustment($camp, $participant);
         $manualMealAdjustment = $this->calculateMealAdjustment($camp, $mealAdjustments);
         $totalMealAdjustment = $autoMealAdjustment['total'] + $manualMealAdjustment;
@@ -119,7 +130,7 @@ class CalculationService
             $breakdown['total'] += $totalMealAdjustment;
         }
 
-        // 4. バス代計算
+        // 5. バス代計算
         // 往復一括設定か別設定かで分岐
         $isBusSeparate = !empty($camp['bus_fee_separate']);
         $outboundUsers = $this->countBusUsers($allParticipants, 'outbound');
@@ -147,34 +158,26 @@ class CalculationService
             }
         } else {
             // 往復一括設定
+            // 往復料金を2で割り、往路・復路それぞれの乗車人数で割る
+            // 往復乗車する人は往路分+復路分を足す
             if ($camp['bus_fee_round_trip']) {
                 $useOutbound = $participant['use_outbound_bus'];
                 $useReturn = $participant['use_return_bus'];
+                $halfFee = $camp['bus_fee_round_trip'] / 2;
 
-                if ($useOutbound && $useReturn) {
-                    // 往復両方利用: 往復料金 ÷ 往復利用者数
-                    $roundTripUsers = $this->countBusUsers($allParticipants, 'round_trip');
-                    if ($roundTripUsers > 0) {
-                        $busFee = round($camp['bus_fee_round_trip'] / $roundTripUsers);
-                        $breakdown['items'][] = [
-                            'category' => 'bus',
-                            'name' => "バス代往復 (1/{$roundTripUsers})",
-                            'amount' => $busFee,
-                        ];
-                        $breakdown['total'] += $busFee;
-                    }
-                } elseif ($useOutbound && $outboundUsers > 0) {
-                    // 往路のみ: 往復料金の半分 ÷ 往路利用者数
-                    $busFee = round(($camp['bus_fee_round_trip'] / 2) / $outboundUsers);
+                if ($useOutbound && $outboundUsers > 0) {
+                    // 往路: 往復料金の半分 ÷ 往路利用者数
+                    $busFee = round($halfFee / $outboundUsers);
                     $breakdown['items'][] = [
                         'category' => 'bus',
                         'name' => "往路バス代 (1/{$outboundUsers})",
                         'amount' => $busFee,
                     ];
                     $breakdown['total'] += $busFee;
-                } elseif ($useReturn && $returnUsers > 0) {
-                    // 復路のみ: 往復料金の半分 ÷ 復路利用者数
-                    $busFee = round(($camp['bus_fee_round_trip'] / 2) / $returnUsers);
+                }
+                if ($useReturn && $returnUsers > 0) {
+                    // 復路: 往復料金の半分 ÷ 復路利用者数
+                    $busFee = round($halfFee / $returnUsers);
                     $breakdown['items'][] = [
                         'category' => 'bus',
                         'name' => "復路バス代 (1/{$returnUsers})",
@@ -861,6 +864,7 @@ class CalculationService
     /**
      * スケジュール表のヘッダーを生成
      *
+     * 1日目は往路バス到着後に午後練習開始（午前練・昼食なし）
      * 最終日は昼食後に復路バスで帰るだけなので、午後練はなし
      */
     private function generateScheduleHeaders(array $camp): array
@@ -870,23 +874,28 @@ class CalculationService
 
         for ($day = 1; $day <= $totalDays; $day++) {
             $dayHeaders = [];
+            $isFirstDay = ($day === 1);
             $isLastDay = ($day === $totalDays);
 
             // 1日目のみ：往路バス
-            if ($day === 1) {
+            if ($isFirstDay) {
                 $dayHeaders[] = ['key' => "day{$day}_outbound_bus", 'label' => 'バス(往)', 'type' => 'bus'];
             }
 
             // 1日目以外：朝食
-            if ($day > 1) {
+            if (!$isFirstDay) {
                 $dayHeaders[] = ['key' => "day{$day}_breakfast", 'label' => '朝食', 'type' => 'meal'];
             }
 
-            // 午前練
-            $dayHeaders[] = ['key' => "day{$day}_morning", 'label' => '午前練', 'type' => 'event'];
+            // 1日目以外：午前練（1日目は往路バス到着後に午後練習開始のため午前練なし）
+            if (!$isFirstDay) {
+                $dayHeaders[] = ['key' => "day{$day}_morning", 'label' => '午前練', 'type' => 'event'];
+            }
 
-            // 昼食
-            $dayHeaders[] = ['key' => "day{$day}_lunch", 'label' => '昼食', 'type' => 'meal'];
+            // 1日目以外：昼食（1日目は往路バス到着後に午後練習開始のため昼食なし）
+            if (!$isFirstDay) {
+                $dayHeaders[] = ['key' => "day{$day}_lunch", 'label' => '昼食', 'type' => 'meal'];
+            }
 
             // 最終日以外：午後練、夕食、夜企画、宿泊
             if (!$isLastDay) {

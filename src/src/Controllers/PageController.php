@@ -5,15 +5,15 @@
 class PageController
 {
     /**
-     * トップページ（リダイレクト）
+     * トップページ（ダッシュボード）
      */
     public function index(array $params): void
     {
-        if (Auth::check()) {
-            Response::redirect('/camps');
-        } else {
+        if (!Auth::check()) {
             Response::redirect('/login');
+            return;
         }
+        $this->render('dashboard');
     }
 
     /**
@@ -22,7 +22,7 @@ class PageController
     public function login(array $params): void
     {
         if (Auth::check()) {
-            Response::redirect('/camps');
+            Response::redirect('/');
         }
 
         $this->render('auth/login');

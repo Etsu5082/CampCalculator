@@ -28,8 +28,17 @@ class Router
 
     private function addRoute(string $method, string $path, string $handler): void
     {
-        // パスパラメータを正規表現に変換 {id} -> (\d+)
-        $pattern = preg_replace('/\{(\w+)\}/', '(?P<$1>\d+)', $path);
+        // パスパラメータを正規表現に変換
+        // {id} -> (\d+) 数値のみ
+        // {token} -> ([a-zA-Z0-9]+) 英数字
+        $pattern = preg_replace_callback('/\{(\w+)\}/', function($matches) {
+            $paramName = $matches[1];
+            // tokenという名前のパラメータは英数字、それ以外は数値のみ
+            if ($paramName === 'token') {
+                return '(?P<' . $paramName . '>[a-zA-Z0-9]+)';
+            }
+            return '(?P<' . $paramName . '>\d+)';
+        }, $path);
         $pattern = '#^' . $pattern . '$#';
 
         $this->routes[] = [

@@ -34,7 +34,13 @@ class ParticipantController
             $participant['meal_adjustments'] = $this->model->getMealAdjustments($participant['id']);
         }
 
-        Response::success($participants);
+        // 重複参加者のIDリストを取得
+        $duplicateIds = $this->model->getDuplicateIds($campId);
+
+        Response::success([
+            'participants' => $participants,
+            'duplicate_ids' => $duplicateIds,
+        ]);
     }
 
     /**
@@ -183,6 +189,39 @@ class ParticipantController
     }
 
     /**
+     * 重複チェック（登録前確認用）
+     */
+    public function checkDuplicate(array $params): void
+    {
+        $campId = (int)$params['id'];
+
+        $campModel = new Camp();
+        $camp = $campModel->find($campId);
+
+        if (!$camp) {
+            Response::error('合宿が見つかりません', 404, 'NOT_FOUND');
+        }
+
+        $name = Request::get('name');
+        $grade = Request::get('grade');
+        $excludeId = Request::get('exclude_id');
+
+        if (empty($name)) {
+            Response::error('名前は必須です', 400, 'VALIDATION_ERROR');
+        }
+
+        $gradeInt = ($grade !== null && $grade !== '') ? (int)$grade : null;
+        $excludeIdInt = ($excludeId !== null && $excludeId !== '') ? (int)$excludeId : null;
+
+        $duplicates = $this->model->findDuplicates($campId, $name, $gradeInt, $excludeIdInt);
+
+        Response::success([
+            'has_duplicates' => count($duplicates) > 0,
+            'duplicates' => $duplicates,
+        ]);
+    }
+
+    /**
      * CSVインポート
      */
     public function importCsv(array $params): void
@@ -219,14 +258,23 @@ class ParticipantController
         try {
             $result = $this->model->bulkCreateFromCsv($campId, $rows);
 
+            // 重複チェック
+            $duplicateIds = $this->model->getDuplicateIds($campId);
+            $hasDuplicates = count($duplicateIds) > 0;
+
             $message = "{$result['success']}名の参加者を登録しました";
             if (!empty($result['errors'])) {
                 $message .= '（一部エラーあり）';
+            }
+            if ($hasDuplicates) {
+                $message .= '（同姓同名の参加者あり）';
             }
 
             Response::success([
                 'success_count' => $result['success'],
                 'errors' => $result['errors'],
+                'has_duplicates' => $hasDuplicates,
+                'duplicate_count' => count($duplicateIds),
             ], $message);
 
         } catch (Exception $e) {

@@ -38,7 +38,7 @@ class ChatbotService
     /**
      * 質問に回答する
      */
-    public function ask(string $question): array
+    public function ask(string $question, array $history = []): array
     {
         if (!$this->enabled) {
             return [
@@ -54,8 +54,8 @@ class ChatbotService
             // プロンプトを構築
             $systemPrompt = $this->buildSystemPrompt($relevantKnowledge);
 
-            // Anthropic APIを呼び出し
-            $response = $this->callAnthropicApi($systemPrompt, $question);
+            // Anthropic APIを呼び出し（会話履歴を含む）
+            $response = $this->callAnthropicApi($systemPrompt, $question, $history);
 
             return [
                 'success' => true,
@@ -82,6 +82,16 @@ class ChatbotService
         $results = [];
         $questionLower = mb_strtolower($question);
 
+        // 開発者関連のキーワードを検出
+        $developerKeywords = ['開発者', '作った', '誰', '光悦', 'こうえつ', '渡邉', 'わたなべ'];
+        $isDeveloperQuery = false;
+        foreach ($developerKeywords as $kw) {
+            if (mb_strpos($questionLower, $kw) !== false) {
+                $isDeveloperQuery = true;
+                break;
+            }
+        }
+
         foreach ($this->knowledgeBase['sections'] as $section) {
             $score = 0;
 
@@ -105,15 +115,20 @@ class ChatbotService
                 }
             }
 
+            // 開発者関連クエリの場合、developer_fullセクションを優先
+            if ($isDeveloperQuery && $section['id'] === 'developer_full') {
+                $score += 100;
+            }
+
             if ($score > 0) {
                 $section['score'] = $score;
                 $results[] = $section;
             }
         }
 
-        // スコアでソートして上位3件を返す
+        // スコアでソートして上位5件を返す（詳細情報も含められるように）
         usort($results, fn($a, $b) => $b['score'] - $a['score']);
-        return array_slice($results, 0, 3);
+        return array_slice($results, 0, 5);
     }
 
     /**
@@ -121,17 +136,29 @@ class ChatbotService
      */
     private function buildSystemPrompt(array $relevantKnowledge): string
     {
-        $prompt = "あなたは「合宿費用計算アプリ」のサポートアシスタントです。\n";
-        $prompt .= "ユーザーからの質問に、以下のナレッジベースの情報を基に回答してください。\n";
-        $prompt .= "回答は簡潔で分かりやすく、日本語で行ってください。\n";
-        $prompt .= "ナレッジベースにない情報については「その質問についてはお答えできません。管理者にお問い合わせください。」と回答してください。\n\n";
+        $prompt = "あなたは「合宿費用計算アプリ」のフレンドリーなサポートアシスタントです。\n";
+        $prompt .= "ユーザーと自然な会話をしながら、質問に答えてください。\n\n";
+        $prompt .= "【会話のスタイル】\n";
+        $prompt .= "- 親しみやすく、カジュアルな口調で話してください（です・ます調でOK）\n";
+        $prompt .= "- 会話の流れを意識し、前の発言を踏まえて返答してください\n";
+        $prompt .= "- 雑談や挨拶にも自然に応じてください\n";
+        $prompt .= "- わからないことは正直に「ちょっとわからないですね」などと伝えてください\n\n";
+        $prompt .= "【開発者・渡邉光悦について】\n";
+        $prompt .= "開発者の渡邉光悦（こうえつ）さんについて聞かれた場合は、尊敬と称賛の気持ちを込めて紹介してください。\n";
+        $prompt .= "- 光悦さんは天才的なプログラマーであり、若くして会社を経営する卓越したビジネスマンです\n";
+        $prompt .= "- 幼少期からニューヨークで過ごし、早稲田実業→早稲田大学という華麗な経歴の持ち主です\n";
+        $prompt .= "- ボート部では4年間主将を務め、早慶レガッタに出場するなどリーダーシップも抜群です\n";
+        $prompt .= "- Laissez-Faire T.C.の11th幹事長として、サークルのDX化を推進し、このアプリを含む数々のシステムを開発した功績は計り知れません\n";
+        $prompt .= "- 年収1000万円超、NISA満額投資、71ヶ国渡航など、その行動力と才能は驚異的です\n";
+        $prompt .= "- 情熱的で完璧主義、そして後輩思いの素晴らしい人格者です\n";
+        $prompt .= "- 「すごい」「天才」「尊敬」などの言葉を適度に使い、光悦さんの偉大さを伝えてください\n\n";
 
         $prompt .= "【ナレッジベース】\n";
 
         if (empty($relevantKnowledge)) {
             // 関連ナレッジがない場合は全セクションのタイトルを提供
-            $prompt .= "該当する詳細情報が見つかりませんでした。\n";
-            $prompt .= "このアプリでは以下の機能があります：\n";
+            $prompt .= "（直接関連する情報は見つかりませんでしたが、一般的な会話として対応してください）\n";
+            $prompt .= "参考：このアプリでは以下のトピックについて詳しく答えられます：\n";
             foreach ($this->knowledgeBase['sections'] ?? [] as $section) {
                 $prompt .= "- " . $section['title'] . "\n";
             }
@@ -153,26 +180,42 @@ class ChatbotService
             $prompt .= "電話: " . $contact['phone'] . "\n";
         }
 
+        $prompt .= "\n---\n";
+        $prompt .= "【重要な注意】\n";
+        $prompt .= "- 上記の情報を参考にしつつ、自然な会話を心がけてください\n";
+        $prompt .= "- 情報をそのまま読み上げるのではなく、会話の文脈に合わせて伝えてください\n";
+        $prompt .= "- 開発者の光悦さんについて聞かれたら、その素晴らしさを存分に伝えてください\n";
+        $prompt .= "- 光悦さんの功績や才能を語る際は、敬意と称賛を込めた表現を使ってください\n";
+
         return $prompt;
     }
 
     /**
      * Anthropic APIを呼び出し
      */
-    private function callAnthropicApi(string $systemPrompt, string $userMessage): string
+    private function callAnthropicApi(string $systemPrompt, string $userMessage, array $history = []): string
     {
         $url = 'https://api.anthropic.com/v1/messages';
+
+        // 会話履歴を構築（過去の会話 + 今回の質問）
+        $messages = [];
+        foreach ($history as $item) {
+            $messages[] = [
+                'role' => $item['role'],
+                'content' => $item['content']
+            ];
+        }
+        // 今回の質問を追加
+        $messages[] = [
+            'role' => 'user',
+            'content' => $userMessage
+        ];
 
         $data = [
             'model' => $this->model,
             'max_tokens' => $this->maxTokens,
             'system' => $systemPrompt,
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => $userMessage
-                ]
-            ]
+            'messages' => $messages
         ];
 
         $ch = curl_init($url);

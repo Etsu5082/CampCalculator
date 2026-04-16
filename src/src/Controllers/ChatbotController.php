@@ -36,6 +36,7 @@ class ChatbotController
         // JSONリクエストを取得
         $input = json_decode(file_get_contents('php://input'), true);
         $question = trim($input['question'] ?? '');
+        $history = $input['history'] ?? [];
 
         if (empty($question)) {
             Response::json([
@@ -54,7 +55,21 @@ class ChatbotController
             return;
         }
 
-        $result = $this->chatbotService->ask($question);
+        // 会話履歴を検証・サニタイズ（最大10件）
+        $sanitizedHistory = [];
+        if (is_array($history)) {
+            foreach (array_slice($history, -10) as $item) {
+                if (isset($item['role']) && isset($item['content'])
+                    && in_array($item['role'], ['user', 'assistant'])) {
+                    $sanitizedHistory[] = [
+                        'role' => $item['role'],
+                        'content' => mb_substr(trim($item['content']), 0, 1000)
+                    ];
+                }
+            }
+        }
+
+        $result = $this->chatbotService->ask($question, $sanitizedHistory);
 
         if ($result['success']) {
             Response::json([

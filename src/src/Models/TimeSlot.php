@@ -144,7 +144,7 @@ class TimeSlot
                 ]);
             }
 
-            // 午後スロット
+            // 午後スロット（最終日は除く）
             if ($day < $days) {
                 $this->create([
                     'camp_id' => $campId,

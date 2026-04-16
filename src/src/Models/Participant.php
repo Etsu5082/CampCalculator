@@ -36,6 +36,19 @@ class Participant
     /**
      * 新規作成
      */
+    /**
+     * 申し込み時点で3年生がOB/OGに該当するか判定し、該当すれば grade=0 に変換する
+     * 10月以降は3年生をOB/OG扱い（合宿参加登録は実際の時点で行われるため月判定で十分）
+     */
+    private function resolveGrade(?int $grade): ?int
+    {
+        if ($grade !== 3) {
+            return $grade;
+        }
+        $month = (int)date('n');
+        return ($month >= 10) ? 0 : 3;
+    }
+
     public function create(array $data): int
     {
         $sql = "INSERT INTO participants (
@@ -59,10 +72,13 @@ class Participant
         $defaultLeaveTiming = ($leaveDay === $totalDays) ? 'return_bus' : 'after_lunch';
         $leaveTiming = $data['leave_timing'] ?? $defaultLeaveTiming;
 
+        // 申し込み時点でOB/OGに該当する場合はgrade=0に確定
+        $grade = isset($data['grade']) ? $this->resolveGrade((int)$data['grade']) : null;
+
         $participantId = $this->db->insert($sql, [
             $data['camp_id'],
             $data['name'],
-            $data['grade'] ?? null,
+            $grade,
             $data['gender'] ?? null,
             $joinDay,
             $joinTiming,
@@ -73,9 +89,10 @@ class Participant
             $data['use_rental_car'] ?? 0,
         ]);
 
-        // 参加スロットと食事調整を自動生成
+        // 参加スロットを自動生成
         $this->generateParticipantSlots($participantId);
-        $this->generateMealAdjustments($participantId);
+        // 食事調整は CalculationService で自動計算されるため、ここでは生成しない
+        // $this->generateMealAdjustments($participantId);
 
         return $participantId;
     }
@@ -96,7 +113,10 @@ class Participant
         foreach ($allowedFields as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "{$field} = ?";
-                $values[] = $data[$field];
+                // 申し込み時点でOB/OGに該当する場合はgrade=0に確定
+                $values[] = ($field === 'grade' && $data[$field] !== null)
+                    ? $this->resolveGrade((int)$data[$field])
+                    : $data[$field];
             }
         }
 
@@ -109,10 +129,11 @@ class Participant
 
         $result = $this->db->execute($sql, $values) > 0;
 
-        // 参加スロットと食事調整を再生成
+        // 参加スロットを再生成
         if ($result) {
             $this->generateParticipantSlots($id);
-            $this->generateMealAdjustments($id);
+            // 食事調整は CalculationService で自動計算されるため、ここでは生成しない
+            // $this->generateMealAdjustments($id);
         }
 
         return $result;
@@ -372,6 +393,10 @@ class Participant
 
     /**
      * CSVから一括登録
+     *
+     * 対応形式:
+     * 1. 名前,学年性別 (例: 山田太郎,1男)
+     * 2. 名前,性別,学年 (例: 山田太郎,男,2)
      */
     public function bulkCreateFromCsv(int $campId, array $rows): array
     {
@@ -393,30 +418,59 @@ class Participant
             }
 
             $name = trim($row[0]);
-            $gradeGender = isset($row[1]) ? trim($row[1]) : '';
-
-            // 学年・性別をパース (1男、1女、2男、2女、3男、3女、OB、OG、OBOG)
-            // 全角数字を半角に変換
-            $gradeGender = mb_convert_kana($gradeGender, 'n');
             $grade = null;
             $gender = null;
 
-            if (preg_match('/^([1-4])([男女])$/u', $gradeGender, $matches)) {
-                $grade = (int)$matches[1];
-                $gender = $matches[2] === '男' ? 'male' : 'female';
-            } elseif (preg_match('/^([1-4])年([男女])$/u', $gradeGender, $matches)) {
-                // 「1年男」「2年女」などの形式にも対応
-                $grade = (int)$matches[1];
-                $gender = $matches[2] === '男' ? 'male' : 'female';
-            } elseif (strtoupper($gradeGender) === 'OB') {
-                $grade = 0;
-                $gender = 'male';
-            } elseif (strtoupper($gradeGender) === 'OG') {
-                $grade = 0;
-                $gender = 'female';
-            } elseif (strtoupper($gradeGender) === 'OBOG') {
-                $grade = 0;
-                $gender = null;
+            // 形式を判定: 3列なら「名前,性別,学年」形式
+            if (isset($row[2]) && !empty(trim($row[2]))) {
+                // 形式2: 名前,性別,学年
+                $genderStr = trim($row[1]);
+                $gradeStr = mb_convert_kana(trim($row[2]), 'n'); // 全角数字を半角に
+
+                // 性別をパース
+                if (in_array($genderStr, ['男', '男性', 'male', 'M', 'm'])) {
+                    $gender = 'male';
+                } elseif (in_array($genderStr, ['女', '女性', 'female', 'F', 'f'])) {
+                    $gender = 'female';
+                }
+
+                // 学年をパース
+                if (preg_match('/^([1-4])年?$/', $gradeStr, $matches)) {
+                    $grade = (int)$matches[1];
+                } elseif (strtoupper($gradeStr) === 'OB' || strtoupper($gradeStr) === 'OG') {
+                    $grade = 0;
+                    // OB/OGの場合、性別も設定（性別列が空の場合のみ）
+                    if ($gender === null) {
+                        $gender = strtoupper($gradeStr) === 'OB' ? 'male' : 'female';
+                    }
+                } elseif (is_numeric($gradeStr) && (int)$gradeStr >= 0 && (int)$gradeStr <= 4) {
+                    $grade = (int)$gradeStr;
+                }
+            } else {
+                // 形式1: 名前,学年性別 (従来形式)
+                $gradeGender = isset($row[1]) ? trim($row[1]) : '';
+
+                // 学年・性別をパース (1男、1女、2男、2女、3男、3女、OB、OG、OBOG)
+                // 全角数字を半角に変換
+                $gradeGender = mb_convert_kana($gradeGender, 'n');
+
+                if (preg_match('/^([1-4])([男女])$/u', $gradeGender, $matches)) {
+                    $grade = (int)$matches[1];
+                    $gender = $matches[2] === '男' ? 'male' : 'female';
+                } elseif (preg_match('/^([1-4])年([男女])$/u', $gradeGender, $matches)) {
+                    // 「1年男」「2年女」などの形式にも対応
+                    $grade = (int)$matches[1];
+                    $gender = $matches[2] === '男' ? 'male' : 'female';
+                } elseif (strtoupper($gradeGender) === 'OB') {
+                    $grade = 0;
+                    $gender = 'male';
+                } elseif (strtoupper($gradeGender) === 'OG') {
+                    $grade = 0;
+                    $gender = 'female';
+                } elseif (strtoupper($gradeGender) === 'OBOG') {
+                    $grade = 0;
+                    $gender = null;
+                }
             }
 
             try {
@@ -440,5 +494,62 @@ class Participant
         }
 
         return ['success' => $success, 'errors' => $errors];
+    }
+
+    /**
+     * 同姓同名・同学年の参加者を検索（重複チェック用）
+     *
+     * @param int $campId 合宿ID
+     * @param string $name 名前
+     * @param int|null $grade 学年
+     * @param int|null $excludeId 除外するID（編集時用）
+     * @return array 該当する参加者のリスト
+     */
+    public function findDuplicates(int $campId, string $name, ?int $grade = null, ?int $excludeId = null): array
+    {
+        $sql = "SELECT * FROM participants WHERE camp_id = ? AND name = ?";
+        $params = [$campId, $name];
+
+        if ($grade !== null) {
+            $sql .= " AND grade = ?";
+            $params[] = $grade;
+        } else {
+            $sql .= " AND grade IS NULL";
+        }
+
+        if ($excludeId !== null) {
+            $sql .= " AND id != ?";
+            $params[] = $excludeId;
+        }
+
+        return $this->db->fetchAll($sql, $params);
+    }
+
+    /**
+     * 合宿内の重複参加者を全て取得（名前+学年が同じ組み合わせ）
+     *
+     * @param int $campId 合宿ID
+     * @return array 重複している参加者IDのリスト
+     */
+    public function getDuplicateIds(int $campId): array
+    {
+        // 名前と学年が同じ参加者が2人以上いる組み合わせを検索
+        $sql = "SELECT GROUP_CONCAT(id) as ids
+                FROM participants
+                WHERE camp_id = ?
+                GROUP BY name, COALESCE(grade, -1)
+                HAVING COUNT(*) > 1";
+
+        $results = $this->db->fetchAll($sql, [$campId]);
+
+        $duplicateIds = [];
+        foreach ($results as $row) {
+            $ids = explode(',', $row['ids']);
+            foreach ($ids as $id) {
+                $duplicateIds[] = (int)$id;
+            }
+        }
+
+        return $duplicateIds;
     }
 }

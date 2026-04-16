@@ -140,24 +140,31 @@ class PdfUploadController
         try {
             // リクエストデータを取得
             $input = Request::json();
-
-            if (!isset($input['camp_id'])) {
-                throw new Exception('合宿IDが指定されていません');
-            }
-
-            $campId = (int)$input['camp_id'];
             $data = $input['data'] ?? [];
-
-            // 合宿の存在確認
             $campModel = new Camp();
-            $camp = $campModel->find($campId);
 
-            if (!$camp) {
-                throw new Exception('合宿が見つかりません');
+            // 新規作成か既存更新かを判定
+            if (!empty($input['create_new'])) {
+                // 新規合宿作成
+                $campId = $this->createNewCamp($input, $data);
+                $message = '新しい合宿を作成しました';
+            } else {
+                // 既存合宿に反映
+                if (!isset($input['camp_id'])) {
+                    throw new Exception('合宿IDが指定されていません');
+                }
+
+                $campId = (int)$input['camp_id'];
+                $camp = $campModel->find($campId);
+
+                if (!$camp) {
+                    throw new Exception('合宿が見つかりません');
+                }
+
+                // データベースに反映
+                $this->applyToCamp($campId, $data);
+                $message = 'データを合宿に反映しました';
             }
-
-            // データベースに反映
-            $this->applyToCamp($campId, $data);
 
             // セッションをクリア
             unset($_SESSION['pdf_parsed_data']);
@@ -169,7 +176,7 @@ class PdfUploadController
 
             Response::json([
                 'success' => true,
-                'message' => 'データを合宿に反映しました',
+                'message' => $message,
                 'redirect' => "/camps/{$campId}",
             ]);
 
@@ -179,6 +186,63 @@ class PdfUploadController
                 'error' => $e->getMessage(),
             ], 400);
         }
+    }
+
+    /**
+     * PDFデータから新規合宿を作成
+     *
+     * @param array $input
+     * @param array $data
+     * @return int 作成された合宿ID
+     * @throws Exception
+     */
+    private function createNewCamp(array $input, array $data): int
+    {
+        // 必須項目のバリデーション
+        if (empty($input['camp_name'])) {
+            throw new Exception('合宿名を入力してください');
+        }
+        if (empty($input['start_date']) || empty($input['end_date'])) {
+            throw new Exception('日程を入力してください');
+        }
+
+        $campModel = new Camp();
+        $timeSlotModel = new TimeSlot();
+
+        // 合宿データを準備
+        $campData = [
+            'name' => $input['camp_name'],
+            'start_date' => $input['start_date'],
+            'end_date' => $input['end_date'],
+            'nights' => (int)$input['nights'],
+        ];
+
+        // PDFから抽出した料金データをマージ
+        if (isset($data['lodging_fee_per_night'])) {
+            $campData['lodging_fee_per_night'] = (int)$data['lodging_fee_per_night'];
+        }
+        if (isset($data['hot_spring_tax'])) {
+            $campData['hot_spring_tax'] = (int)$data['hot_spring_tax'];
+        }
+        if (isset($data['court_fee_per_unit'])) {
+            $campData['court_fee_per_unit'] = (int)$data['court_fee_per_unit'];
+        }
+        if (isset($data['banquet_fee_per_person'])) {
+            $campData['banquet_fee_per_person'] = (int)$data['banquet_fee_per_person'];
+        }
+        if (isset($data['bus_fee_round_trip'])) {
+            $campData['bus_fee_round_trip'] = (int)$data['bus_fee_round_trip'];
+        }
+
+        // 合宿を作成
+        $campId = $campModel->create($campData);
+
+        // デフォルトのタイムスロットを生成
+        $courtFeePerUnit = $campData['court_fee_per_unit'] ?? null;
+        $gymFeePerUnit = null;
+        $timeSlotModel->createDefaultSlots($campId, (int)$input['nights'], $courtFeePerUnit, $gymFeePerUnit);
+
+        return $campId;
     }
 
     /**
